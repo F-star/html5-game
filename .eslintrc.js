@@ -16,10 +16,10 @@ module.exports = {
 			'error',
 			2
 		],
-		'linebreak-style': [
+		/* 'linebreak-style': [
 			'error',
-			'unix'
-		],
+			'windows'
+		], */
 		'quotes': [
 			'error',
 			'single'

@@ -48,12 +48,12 @@ class Layer {
 
 // 蛇
 class Snake {
-  constructor(grid_w, pos, length, dir) {
+  constructor(grid_w, pos, length, curr_dir) {
     this.grid_w = grid_w;
     // pos 为数组，存储位置的关键坐标信息，类似 svg 的 path 元素的 d。顺序为蛇头到蛇尾巴。
     this.pos = pos;
     this.length = length;
-    this.dir = dir; // 方向
+    this.curr_dir = curr_dir; // 方向
   }
   draw(ctx) {
     this.pos.reduce((prev, curr) => {
@@ -68,13 +68,17 @@ class Snake {
     });
   }
   // 设置方向。
-  setDir(dir) {
+  setTargetDir(target_dir) {
     // 当前方向和要修改的方法反向时，失效。
-
+    this.target_dir = target_dir;
   }
   // 更新位置信息。
   update() {
-
+    // 只要是头和尾的修改。
+    // 1. 头部的处理。
+    if (this.target_dir === this.curr_dir) {
+      if (this.target_dir === 'down') this.pos[0];
+    }
   }
 }
 
@@ -87,9 +91,9 @@ class Snake {
 const layer = new Layer(400, 500);
 document.querySelector('#view').appendChild(layer.el);
 const points = [
-  { x: 1, y: 1 },
+  { x: 2, y: 3 },
   { x: 2, y: 1 },
-  { x: 2, y: 3 }
+  { x: 1, y: 1 },
 ];
 const snake = new Snake(20, points, 4, 'down');
 layer.addSnake(snake);
