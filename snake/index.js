@@ -39,66 +39,104 @@ class Layer {
     this.ctx.clearRect(0, 0, this.width(), this.height());
   }
   start() {
-    snake.draw(this.ctx);
-    // window.requestAnimationFrame(function(ts) {
-
-    // });
+    // 
+    this.update();
+  }
+  update() {
+    window.requestAnimationFrame(dt => {
+      // dt 为当前帧和上一帧的时间差。单位为 秒/帧，fps = 1/dt
+      console.log('触发')
+      this.clear();
+      snake.update();
+      snake.draw(this.ctx);
+      this.update();
+    });
   }
 }
 
-// 蛇
+// 向量
+class Vector {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  dotProduct(vector) {
+    return this.x * vector.x + this.y * vector.y;
+  }
+}
+
+// 贪吃蛇
 class Snake {
-  constructor(grid_w, pos, length, curr_dir) {
+  constructor(grid_w, points, dirStr, row, col) {
     this.grid_w = grid_w;
-    // pos 为数组，存储位置的关键坐标信息，类似 svg 的 path 元素的 d。顺序为蛇头到蛇尾巴。
-    this.pos = pos;
-    this.length = length;
-    this.curr_dir = curr_dir; // 方向
+    this.points = points; // 方向为：头到尾
+    this.row = row;
+    this.col = col;
+    this.dir = this.getDirVectorByStr(dirStr);
+    this.next_dir = null;
+  }
+  // 获取当前方向向量（在初始化的时候才被使用一次。）
+  getDirVector() {
+    const vector = {
+      x: this.points[0].x - this.points[1].x,
+      y: this.points[0].y - this.points[1].y
+    };
+    if (vector.x > 0) vector.x = vector.x / Math.abs(vector.x);
+    if (vector.y > 0) vector.y = vector.y / Math.abs(vector.y);
+    return vector;
   }
   draw(ctx) {
-    this.pos.reduce((prev, curr) => {
-      const box = {
-        x: Math.min(prev.x, curr.x) * this.grid_w,
-        y: Math.min(prev.y, curr.y) * this.grid_w,
-        width: (Math.abs(prev.x - curr.x) + 1) * this.grid_w,
-        height: (Math.abs(prev.y - curr.y) + 1) * this.grid_w
-      };
-      ctx.fillRect(box.x, box.y, box.width, box.height);
-      return curr;
+    this.points.forEach(point => {
+      const x = point.x * this.grid_w;
+      const y = point.y * this.grid_w;
+      ctx.fillRect(x, y, this.grid_w, this.grid_w);
     });
   }
+  getDirVectorByStr(dirStr) {
+    const vector = {
+      up:    {x: 0,  y: -1},
+      down:  {x: 0,  y: 1},
+      left:  {x: -1, y: 0},
+      right: {x: 1,  y: 0}
+    }[dirStr];
+    if (!vector) throw new Error(`${dirStr} 方向字符串不在可选值范围内`);
+    return new Vector(vector.x, vector.y);
+  }
   // 设置方向。
-  setTargetDir(target_dir) {
-    // 当前方向和要修改的方法反向时，失效。
-    this.target_dir = target_dir;
+  setDir(dirStr) {
+    const next_dir = this.getDirVectorByStr(dirStr);
+    if (this.dir.dotProduct(next_dir) < 0) return false; // 反向，设置失败
+    this.dir = next_dir;
+    return true;
   }
   // 更新位置信息。
   update() {
-    // 只要是头和尾的修改。
-    // 1. 头部的处理。
-    if (this.target_dir === this.curr_dir) {
-      if (this.target_dir === 'down') this.pos[0];
-    }
+    const head = this.points[0];
+    const next_head = {
+      x: (head.x + this.dir.x + this.row) % this.row,
+      y: (head.y + this.dir.y + this.col) % this.col
+    };
+    this.points.unshift(next_head);
+    this.points.pop();
   }
 }
-
-/* const Util = {
-  getRandomColor() {
-    const colors = ['red', ]
-  }
-}; */
 
 const layer = new Layer(400, 500);
 document.querySelector('#view').appendChild(layer.el);
 const points = [
   { x: 2, y: 3 },
+  { x: 2, y: 2 },
   { x: 2, y: 1 },
   { x: 1, y: 1 },
+  { x: 0, y: 1 },
 ];
-const snake = new Snake(20, points, 4, 'down');
+const snake = new Snake(20, points, 'down', 400 / 20, 500 / 20);
 layer.addSnake(snake);
 layer.start();
 
-/* window.addEventListener('keydown', function() {
-
-}); */
+window.addEventListener('keydown', function(e) {
+  if (e.code === 'ArrowLeft' || e.keyCode === 37) snake.setDir('left'); 
+  else if (e.code === 'ArrowUp' || e.keyCode === 38) snake.setDir('up'); 
+  else if (e.code === 'ArrowRight' || e.keyCode === 39) snake.setDir('right');
+  else if (e.code === 'ArrowDown' || e.keyCode === 40) snake.setDir('down');
+});
