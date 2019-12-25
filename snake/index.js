@@ -6,6 +6,16 @@
   }
 } */
 
+class DataView {
+  constructor() {
+    this.el = document.createElement('span');
+    document.body.append(this.el);
+  }
+  updateFPS(fps) {
+    this.el.innerHTML = fps;
+  }
+}
+
 //层
 class Layer {
   constructor(width, height) {
@@ -13,6 +23,10 @@ class Layer {
     this.ctx = this.el.getContext('2d');
     this.snake = undefined;
     this.size(width, height);
+
+    this.dataView = new DataView();
+    this.last_ts = 0;
+    this.count = 0;
   }
   width(val) {
     if (val == undefined) {
@@ -39,16 +53,20 @@ class Layer {
     this.ctx.clearRect(0, 0, this.width(), this.height());
   }
   start() {
-    // 
     this.update();
   }
   update() {
-    window.requestAnimationFrame(dt => {
+    window.requestAnimationFrame(ts => {
       // dt 为当前帧和上一帧的时间差。单位为 秒/帧，fps = 1/dt
-      console.log('触发')
-      this.clear();
-      snake.update();
-      snake.draw(this.ctx);
+      if (this.last_ts === 0) this.last_ts = ts;
+      const dt = ts - this.last_ts; // 两帧的间隔时间
+      if (this.count++ % 5 == 0) {
+        this.dataView.updateFPS('fps: ' + 1 / dt * 1000);
+        this.clear();
+        snake.update();
+        snake.draw(this.ctx);
+      }
+      this.last_ts = ts;
       this.update();
     });
   }
@@ -67,13 +85,14 @@ class Vector {
 
 // 贪吃蛇
 class Snake {
-  constructor(grid_w, points, dirStr, row, col) {
+  constructor(grid_w, points, dirStr, width, height) {
     this.grid_w = grid_w;
     this.points = points; // 方向为：头到尾
-    this.row = row;
-    this.col = col;
+    this.row = width / grid_w;
+    this.col = height / grid_w;
     this.dir = this.getDirVectorByStr(dirStr);
     this.next_dir = null;
+    this.speed_ = 0; // 每秒移动几个单位。
   }
   // 获取当前方向向量（在初始化的时候才被使用一次。）
   getDirVector() {
@@ -84,6 +103,12 @@ class Snake {
     if (vector.x > 0) vector.x = vector.x / Math.abs(vector.x);
     if (vector.y > 0) vector.y = vector.y / Math.abs(vector.y);
     return vector;
+  }
+  speed(val) {
+    if (val == undefined) {
+      return this.speed_;
+    }
+    this.speed_ = val;
   }
   draw(ctx) {
     this.points.forEach(point => {
@@ -121,7 +146,7 @@ class Snake {
   }
 }
 
-const layer = new Layer(400, 500);
+const layer = new Layer(600, 500);
 document.querySelector('#view').appendChild(layer.el);
 const points = [
   { x: 2, y: 3 },
@@ -130,13 +155,18 @@ const points = [
   { x: 1, y: 1 },
   { x: 0, y: 1 },
 ];
-const snake = new Snake(20, points, 'down', 400 / 20, 500 / 20);
+const snake = new Snake(20, points, 'down', 600, 500);
+snake.speed(2); // 每秒移动两个单位。
 layer.addSnake(snake);
 layer.start();
 
 window.addEventListener('keydown', function(e) {
-  if (e.code === 'ArrowLeft' || e.keyCode === 37) snake.setDir('left'); 
-  else if (e.code === 'ArrowUp' || e.keyCode === 38) snake.setDir('up'); 
-  else if (e.code === 'ArrowRight' || e.keyCode === 39) snake.setDir('right');
-  else if (e.code === 'ArrowDown' || e.keyCode === 40) snake.setDir('down');
+  if (e.code === 'ArrowLeft' || e.keyCode === 37)
+    snake.setDir('left'); 
+  else if (e.code === 'ArrowUp' || e.keyCode === 38)
+    snake.setDir('up'); 
+  else if (e.code === 'ArrowRight' || e.keyCode === 39)
+    snake.setDir('right');
+  else if (e.code === 'ArrowDown' || e.keyCode === 40)
+    snake.setDir('down');
 });
