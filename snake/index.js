@@ -70,17 +70,27 @@ class Layer {
       const dt = ts - this.last_ts; // 两帧的间隔时间
       if (this.count++ % 10 == 0) {
         this.dataView.updateFPS('fps: ' + 1 / dt * 1000);
-        this.clear();
-        const eat = this.snake.update(apple);
-        if (eat) {
+        const next_head = this.snake.getNextHeadPos();
+        // 吃到苹果
+        if (next_head.x === apple.x && next_head.y === apple.y){
           this.apple.setPosExcept(this.snake.row, this.snake.col, this.snake.points);
         }
+        this.snake.update(next_head);
+        if (this.snake.isHitSelf()) {
+          return this.stop();
+        }
+
+        // 渲染
+        this.clear();
         this.apple.draw(this.ctx);
         this.snake.draw(this.ctx, this.grid_w);
       }
       this.last_ts = ts;
       this.update();
     });
+  }
+  stop() {
+    alert('好了，你死了');
   }
 }
 
@@ -102,10 +112,6 @@ class Snake {
     this.points = points; // 方向为：头到尾
     this.row = height / grid_w;
     this.col = width / grid_w;
-    console.log({
-      row: this.row,
-      col: this.col
-    });
     this.dir = this.getDirVectorByStr(dirStr);
     this.next_dir = null;
     this.speed_ = 0; // 每秒移动几个单位。
@@ -126,6 +132,9 @@ class Snake {
     }
     this.speed_ = val;
   }
+  getLen() {
+    return this.points.length;
+  }
   getDirVectorByStr(dirStr) {
     const vector = {
       up:    {x: 0,  y: -1},
@@ -141,8 +150,7 @@ class Snake {
     const next_dir = this.getDirVectorByStr(dirStr);
     this.next_dir = next_dir;
   }
-  // 更新位置信息。
-  update(applePos) {
+  getNextHeadPos() {
     if (this.next_dir && this.next_dir.dotProduct(this.dir) >= 0) { // next_dir 不和 dir 反向
       this.dir = this.next_dir;
       this.next_dir = null;
@@ -152,15 +160,30 @@ class Snake {
       x: (head.x + this.dir.x + this.col) % this.col,
       y: (head.y + this.dir.y + this.row) % this.row
     };
-    this.points.unshift(next_head);
-    let eat;
-    if (next_head.x === applePos.x && next_head.y === applePos.y){
-      eat = true;
-    } else {
-      this.points.pop();
-      eat = false;
+    return next_head;
+  }
+  // 咬到自己了
+  isHitSelf() {
+    const head = this.points[0];
+    const len = this.getLen();
+    for (let i = 1; i < len; i++) {
+      if (head.x === this.points[i].x && head.y === this.points[i].y) return true;
     }
-    return eat;
+    return false;
+  }
+  // 更新位置信息。
+  update(next_head) {
+    /* if (this.next_dir && this.next_dir.dotProduct(this.dir) >= 0) { // next_dir 不和 dir 反向
+      this.dir = this.next_dir;
+      this.next_dir = null;
+    }
+    const head = this.points[0];
+    const next_head = {
+      x: (head.x + this.dir.x + this.col) % this.col,
+      y: (head.y + this.dir.y + this.row) % this.row
+    }; */
+    this.points.unshift(next_head);
+    this.points.pop();
   }
   draw(ctx) {
     this.points.forEach((point, index) => {
