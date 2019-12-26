@@ -72,10 +72,12 @@ class Layer {
         this.dataView.updateFPS('fps: ' + 1 / dt * 1000);
         const next_head = this.snake.getNextHeadPos();
         // 吃到苹果
+        let eat = false;
         if (next_head.x === apple.x && next_head.y === apple.y){
           this.apple.setPosExcept(this.snake.row, this.snake.col, this.snake.points);
+          eat = true;
         }
-        this.snake.update(next_head);
+        this.snake.update(next_head, eat);
         if (this.snake.isHitSelf()) {
           return this.stop();
         }
@@ -172,7 +174,7 @@ class Snake {
     return false;
   }
   // 更新位置信息。
-  update(next_head) {
+  update(next_head, grow) {
     /* if (this.next_dir && this.next_dir.dotProduct(this.dir) >= 0) { // next_dir 不和 dir 反向
       this.dir = this.next_dir;
       this.next_dir = null;
@@ -183,7 +185,7 @@ class Snake {
       y: (head.y + this.dir.y + this.row) % this.row
     }; */
     this.points.unshift(next_head);
-    this.points.pop();
+    if (!grow) this.points.pop();
   }
   draw(ctx) {
     this.points.forEach((point, index) => {
