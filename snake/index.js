@@ -8,8 +8,9 @@
 
 class DataView {
   constructor() {
-    this.el = document.createElement('span');
+    this.el = document.createElement('div');
     document.body.append(this.el);
+
   }
   updateFPS(fps) {
     this.el.innerHTML = fps;
@@ -84,8 +85,9 @@ class Layer {
 
         // 渲染
         this.clear();
-        this.apple.draw(this.ctx);
+
         this.snake.draw(this.ctx, this.grid_w);
+        this.apple.draw(this.ctx);
       }
       this.last_ts = ts;
       this.update();
