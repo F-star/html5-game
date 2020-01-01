@@ -61,7 +61,10 @@ class Layer {
       // dt 为当前帧和上一帧的时间差。单位为 秒/帧，fps = 1/dt
       if (this.last_ts === 0) this.last_ts = ts;
       const dt = ts - this.last_ts; // 两帧的间隔时间
-      if (this.frame_count++ % 10 == 0) {
+      const CANVAS_FPS = 60;
+      const interval_frame = Math.round(CANVAS_FPS / this.snake.speed());
+      if (this.frame_count++ % interval_frame == 0) {
+        this.snake.updateDir();
         const next_head = this.snake.getNextHeadPos();
         
         // 吃到苹果
@@ -150,11 +153,13 @@ class Snake {
     const next_dir = this.getDirVectorByStr(dirStr);
     this.next_dir = next_dir;
   }
-  getNextHeadPos() {
+  updateDir() {
     if (this.next_dir && this.next_dir.dotProduct(this.dir) >= 0) { // next_dir 不和 dir 反向
       this.dir = this.next_dir;
       this.next_dir = null;
     }
+  }
+  getNextHeadPos() {
     const head = this.points[0];
     const next_head = {
       x: (head.x + this.dir.x + this.col) % this.col,
@@ -266,6 +271,7 @@ const points = [
   { x: 0, y: 1 },
 ];
 const snake = new Snake(grid_w, points, 'down', width, height);
+snake.speed(6); // 设置 6 帧 1 s。
 const apple = new Apple(grid_w);
 const dataViewer = new DataViewer();
 layer.addSnake(snake);
