@@ -100,8 +100,21 @@ class Layer {
 // 向量
 class Vector {
   constructor(x, y) {
+    if (y == undefined) {
+      return this.getDirVectorByStr(x);
+    }
     this.x = x;
     this.y = y;
+  }
+  getDirVectorByStr(dirStr) {
+    const vector = {
+      up:    {x: 0,  y: -1},
+      down:  {x: 0,  y: 1},
+      left:  {x: -1, y: 0},
+      right: {x: 1,  y: 0}
+    }[dirStr];
+    if (!vector) throw new Error(`${dirStr} 方向字符串不在可选值范围内`);
+    return new Vector(vector.x, vector.y);
   }
   dotProduct(vector) {
     return this.x * vector.x + this.y * vector.y;
@@ -115,7 +128,7 @@ class Snake {
     this.points = points; // 方向为：头到尾
     this.row = height / grid_w;
     this.col = width / grid_w;
-    this.dir = this.getDirVectorByStr(dirStr);
+    this.dir = new Vector(dirStr);
     this.next_dir = null;
     this.speed_ = 0; // 每秒移动几个单位。
   }
@@ -138,19 +151,9 @@ class Snake {
   getLen() {
     return this.points.length;
   }
-  getDirVectorByStr(dirStr) {
-    const vector = {
-      up:    {x: 0,  y: -1},
-      down:  {x: 0,  y: 1},
-      left:  {x: -1, y: 0},
-      right: {x: 1,  y: 0}
-    }[dirStr];
-    if (!vector) throw new Error(`${dirStr} 方向字符串不在可选值范围内`);
-    return new Vector(vector.x, vector.y);
-  }
   // 设置方向。
   setNextDir(dirStr) {
-    const next_dir = this.getDirVectorByStr(dirStr);
+    const next_dir = new Vector(dirStr);
     this.next_dir = next_dir;
   }
   updateDir() {
