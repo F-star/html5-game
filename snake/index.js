@@ -282,6 +282,21 @@ layer.addApple(apple);
 layer.addDataViewer(dataViewer);
 layer.start();
 
+// 开发中，当前不可用
+class KeyMapController {
+  constructor() {
+    this.keyMap = {};
+  }
+  // action 为字符串。在游戏中对应一些操作，如 left jump lay 等。
+  setKeyMap(key, action) {
+    this.keyMap[key] = action;
+  }
+  removeKeyMap(key) {
+    delete this.keyMap[key];
+  }
+}
+
+
 window.addEventListener('keydown', function(e) {
   if (e.code === 'KeyA' || e.keyCode === 65 ||
     e.code === 'ArrowLeft' || e.keyCode === 37)
