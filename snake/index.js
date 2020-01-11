@@ -19,6 +19,7 @@ class Layer {
     this.last_ts = 0;
     this.frame_count = 0;
     this.score = 0;
+    this.state = 'init'; // int, running, ...
   }
   width(val) {
     if (val == undefined) {
@@ -51,10 +52,20 @@ class Layer {
     this.ctx.clearRect(0, 0, this.width(), this.height());
   }
   start() {
+    if (this.state === 'running') return false;
+    this.state = 'running';
+
     this.apple.setPosExcept(this.snake.row, this.snake.col, this.snake.points);
     this.apple.draw(this.ctx);
-
+    
     this.update();
+    return true;
+  }
+  pause() {
+
+  }
+  stop() {
+    alert('好了，你死了');
   }
   update() {
     window.requestAnimationFrame(ts => {
@@ -92,9 +103,6 @@ class Layer {
       this.update();
     });
   }
-  stop() {
-    alert('好了，你死了');
-  }
 }
 
 // 向量
@@ -125,7 +133,7 @@ class Vector {
 class Snake {
   constructor(grid_w, points, dirStr, width, height) {
     this.grid_w = grid_w;
-    this.points = points; // 方向为：头到尾
+    this.points = points; // 顺序：头到尾
     this.row = height / grid_w;
     this.col = width / grid_w;
     this.dir = new Vector(dirStr);
@@ -277,7 +285,7 @@ const snake = new Snake(grid_w, points, 'down', width, height);
 snake.speed(6); // 设置 6 帧 1 s。
 const apple = new Apple(grid_w);
 const dataViewer = new DataViewer();
-layer.addSnake(snake);
+layer.addSnake(snake); // 依赖注入
 layer.addApple(apple);
 layer.addDataViewer(dataViewer);
 layer.start();
