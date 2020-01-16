@@ -19,6 +19,7 @@ class Layer {
     this.last_ts = 0;
     this.frame_count = 0;
     this.score = 0;
+    this.state = 'init'; // int, running, ...
   }
   width(val) {
     if (val == undefined) {
@@ -51,10 +52,20 @@ class Layer {
     this.ctx.clearRect(0, 0, this.width(), this.height());
   }
   start() {
+    if (this.state === 'running') return false;
+    this.state = 'running';
+
     this.apple.setPosExcept(this.snake.row, this.snake.col, this.snake.points);
     this.apple.draw(this.ctx);
-
+    
     this.update();
+    return true;
+  }
+  pause() {
+
+  }
+  stop() {
+    alert('好了，你死了');
   }
   update() {
     window.requestAnimationFrame(ts => {
@@ -92,16 +103,26 @@ class Layer {
       this.update();
     });
   }
-  stop() {
-    alert('好了，你死了');
-  }
 }
 
 // 向量
 class Vector {
   constructor(x, y) {
+    if (y == undefined) {
+      return this.getDirVectorByStr(x);
+    }
     this.x = x;
     this.y = y;
+  }
+  getDirVectorByStr(dirStr) {
+    const vector = {
+      up:    {x: 0,  y: -1},
+      down:  {x: 0,  y: 1},
+      left:  {x: -1, y: 0},
+      right: {x: 1,  y: 0}
+    }[dirStr];
+    if (!vector) throw new Error(`${dirStr} 方向字符串不在可选值范围内`);
+    return new Vector(vector.x, vector.y);
   }
   dotProduct(vector) {
     return this.x * vector.x + this.y * vector.y;
@@ -112,10 +133,10 @@ class Vector {
 class Snake {
   constructor(grid_w, points, dirStr, width, height) {
     this.grid_w = grid_w;
-    this.points = points; // 方向为：头到尾
+    this.points = points; // 顺序：头到尾
     this.row = height / grid_w;
     this.col = width / grid_w;
-    this.dir = this.getDirVectorByStr(dirStr);
+    this.dir = new Vector(dirStr);
     this.next_dir = null;
     this.speed_ = 0; // 每秒移动几个单位。
   }
@@ -138,19 +159,9 @@ class Snake {
   getLen() {
     return this.points.length;
   }
-  getDirVectorByStr(dirStr) {
-    const vector = {
-      up:    {x: 0,  y: -1},
-      down:  {x: 0,  y: 1},
-      left:  {x: -1, y: 0},
-      right: {x: 1,  y: 0}
-    }[dirStr];
-    if (!vector) throw new Error(`${dirStr} 方向字符串不在可选值范围内`);
-    return new Vector(vector.x, vector.y);
-  }
   // 设置方向。
   setNextDir(dirStr) {
-    const next_dir = this.getDirVectorByStr(dirStr);
+    const next_dir = new Vector(dirStr);
     this.next_dir = next_dir;
   }
   updateDir() {
@@ -274,10 +285,25 @@ const snake = new Snake(grid_w, points, 'down', width, height);
 snake.speed(6); // 设置 6 帧 1 s。
 const apple = new Apple(grid_w);
 const dataViewer = new DataViewer();
-layer.addSnake(snake);
+layer.addSnake(snake); // 依赖注入
 layer.addApple(apple);
 layer.addDataViewer(dataViewer);
 layer.start();
+
+// 开发中，当前不可用
+class KeyMapController {
+  constructor() {
+    this.keyMap = {};
+  }
+  // action 为字符串。在游戏中对应一些操作，如 left jump lay 等。
+  setKeyMap(key, action) {
+    this.keyMap[key] = action;
+  }
+  removeKeyMap(key) {
+    delete this.keyMap[key];
+  }
+}
+
 
 window.addEventListener('keydown', function(e) {
   if (e.code === 'KeyA' || e.keyCode === 65 ||
