@@ -24,6 +24,7 @@ class Game {
         this.grid_width = grid_width;
         this.el = document.createElement('canvas');
         this.ctx = this.el.getContext('2d');
+        this.step = 0;
         this.walls = [];
         this.tiles = [];
         this.goals = [];
@@ -68,12 +69,12 @@ class Game {
         boxIndex = this.boxes.findIndex(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
         if (boxIndex === -1) {
             this.player = forwardPlayer;
+            this.step++;
             return;
         }
         // 3. 玩家前面的箱子的前面，是否有箱子或者墙。
         const forwardBox = this.boxes[boxIndex].add(dirVector);
         forwardIsWall = this.walls.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
-        console.log('forwardIsWall', forwardIsWall);
         if (forwardIsWall)
             return;
         const forwardIsBox = this.boxes.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
@@ -81,6 +82,10 @@ class Game {
             return;
         this.player = forwardPlayer;
         this.boxes[boxIndex] = forwardBox;
+        this.step++;
+    }
+    getStep() {
+        return this.step;
     }
     checkSucess() {
         const isSucess = this.goals.every(goal => {
@@ -92,37 +97,36 @@ class Game {
     pause() {
         // TODO:
     }
-    renderPoints(points, color) {
+    renderPoints(points, color, offset = 0) {
         const ctx = this.ctx;
-        const grid_w = this.grid_width;
+        let grid_w = this.grid_width;
         ctx.save();
         ctx.fillStyle = color;
         points.forEach(pt => {
-            ctx.fillRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
+            ctx.fillRect(pt.x * grid_w + offset, pt.y * grid_w + offset, grid_w - offset * 2, grid_w - offset * 2);
         });
         ctx.restore();
     }
-    renderPointsToStroke(points, color) {
+    renderPointsToStroke(points, color, offset = 0) {
         const ctx = this.ctx;
         const grid_w = this.grid_width;
         ctx.save();
-        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
         points.forEach(pt => {
-            ctx.strokeRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
+            ctx.strokeRect(pt.x * grid_w + offset, pt.y * grid_w + offset, grid_w - offset * 2, grid_w - offset * 2);
         });
         ctx.restore();
     }
     render() {
         const ctx = this.ctx;
         const grid_w = this.grid_width;
-        if (ctx === null) {
+        if (ctx === null)
             throw new Error('canvas 上下文获取失败。');
-        }
         // 绘制不同元素
-        this.renderPoints(this.walls, '#94691d');
-        this.renderPoints(this.tiles, 'green');
-        this.renderPointsToStroke(this.goals, 'red');
-        this.renderPoints(this.boxes, 'blue');
+        this.renderPoints(this.walls, '#db585b');
+        this.renderPoints(this.tiles, '#75726e');
+        this.renderPoints(this.boxes, '#cc9727', 1);
+        this.renderPointsToStroke(this.goals, '#c8d8dc', 8);
         this.renderPoints([this.player], 'black');
     }
 }
@@ -132,9 +136,9 @@ function resolveMap(mapStr, width, height) {
         '.': 'empty',
         0: 'tile',
         1: 'wall',
-        2: 'goal',
-        3: 'box',
-        P: 'player'
+        x: 'goal',
+        b: 'box',
+        p: 'player'
     };
     mapStr = mapStr.replace(/\s+/g, '');
     const walls = [];
@@ -165,18 +169,32 @@ function resolveMap(mapStr, width, height) {
         walls, tiles, boxes, goals, player
     };
 }
-const gameMap = `
-.111111111
-100000P001
-1000000001
-1111020301
-...111111.
+/* const gameMap = `
+1111..
+10011.
+1px01.
+1xxb11
+10bb01
+100001
+111111
 `;
-const width = 10;
-const height = 5;
+const width = 6;
+const height = 7;
+const grid_width = 40; */
+const gameMap = `
+..1111.
+111001.
+100xb11
+1000bp1
+101x001
+1000001
+1111111
+`;
+const width = 7;
+const height = 7;
+const grid_width = 40;
 const data = resolveMap(gameMap, width, height);
 console.log(data);
-const grid_width = 20;
 const game = new Game(width, height, grid_width);
 game.setWalls(data.walls);
 game.setTiles(data.tiles);
@@ -190,6 +208,7 @@ game.render();
 // 箱子有两种状态。
 // 玩家也会有 4 种朝向。
 let end = false;
+const stepCountElement = document.getElementById('count');
 document.body.addEventListener('keydown', function (e) {
     if (end)
         return;
@@ -207,9 +226,11 @@ document.body.addEventListener('keydown', function (e) {
         return;
     game.move(dir);
     game.render();
+    stepCountElement.innerText = '' + game.getStep();
     if (game.checkSucess()) {
-        // 结束了。
+        // 结束
         console.log('Game Clear！');
+        document.getElementById('win-tip').innerText = 'WIN';
         end = true;
     }
 });
