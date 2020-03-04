@@ -17,4 +17,8 @@ todo：
 
 （还没做回退功能）
 
+为了练手 typescript，而完全使用了 typescript 编写。
+
+感受是，编辑器代码提示很准确，开发体验很好。不过要较大改动代码的时候，不如 js 灵活。
+
 https://f-star.github.io/html5-game/Sokoban/

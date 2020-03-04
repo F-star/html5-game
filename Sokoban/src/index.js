@@ -9,12 +9,6 @@ class Point {
     }
 }
 /**
- * 箱子类
- */
-class Boxes {
-    constructor(boxes) { }
-}
-/**
  * 游戏类
  */
 class Game {
@@ -94,9 +88,6 @@ class Game {
         });
         return isSucess;
     }
-    pause() {
-        // TODO:
-    }
     renderPoints(points, color, offset = 0) {
         const ctx = this.ctx;
         let grid_w = this.grid_width;
@@ -169,18 +160,6 @@ function resolveMap(mapStr, width, height) {
         walls, tiles, boxes, goals, player
     };
 }
-/* const gameMap = `
-1111..
-10011.
-1px01.
-1xxb11
-10bb01
-100001
-111111
-`;
-const width = 6;
-const height = 7;
-const grid_width = 40; */
 const gameMap = `
 ..1111.
 111001.
@@ -203,10 +182,6 @@ game.setBoxes(data.boxes);
 game.setPlayer(data.player);
 game.mounted('#game');
 game.render();
-// game.initMapInfo(gameMap, width, height);
-// game.set
-// 箱子有两种状态。
-// 玩家也会有 4 种朝向。
 let end = false;
 const stepCountElement = document.getElementById('count');
 document.body.addEventListener('keydown', function (e) {
