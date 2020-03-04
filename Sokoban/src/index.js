@@ -83,7 +83,14 @@ class Game {
         this.boxes[boxIndex] = forwardBox;
     }
     checkSucess() {
-        // TODO: 判断胜利条件，并终止用户输入
+        const isSucess = this.goals.every(goal => {
+            const isMatch = this.boxes.some(box => box.x === goal.x && box.y === goal.y);
+            return isMatch;
+        });
+        return isSucess;
+    }
+    pause() {
+        // TODO:
     }
     renderPoints(points, color) {
         const ctx = this.ctx;
@@ -182,8 +189,10 @@ game.render();
 // game.set
 // 箱子有两种状态。
 // 玩家也会有 4 种朝向。
+let end = false;
 document.body.addEventListener('keydown', function (e) {
-    console.log('移动');
+    if (end)
+        return;
     const eventKey = e.key;
     let dir = '';
     if (eventKey === 'ArrowLeft')
@@ -194,9 +203,13 @@ document.body.addEventListener('keydown', function (e) {
         dir = 'up';
     else if (eventKey === 'ArrowDown')
         dir = 'down';
-    if (dir === undefined)
+    else
         return;
     game.move(dir);
     game.render();
-    game.checkSucess();
+    if (game.checkSucess()) {
+        // 结束了。
+        console.log('Game Clear！');
+        end = true;
+    }
 });

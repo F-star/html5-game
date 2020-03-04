@@ -52,11 +52,9 @@ class Game {
       throw new Error('方向字符串不合法')
     }
     const forwardPlayer = this.player.add(dirVector);
-
     // 1. 玩家前面是否有墙
     let forwardIsWall = this.walls.some(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
     if (forwardIsWall) return;
-
     // 2. 玩家的前进方向是否有箱子。
     let boxIndex: number; 
     boxIndex = this.boxes.findIndex(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
@@ -76,7 +74,14 @@ class Game {
     this.boxes[boxIndex] = forwardBox;
   }
   checkSucess() {
-    // TODO: 判断胜利条件，并终止用户输入
+    const isSucess = this.goals.every(goal => {
+      const isMatch = this.boxes.some(box => box.x === goal.x && box.y === goal.y);
+      return isMatch;
+    })
+    return isSucess;
+  }
+  pause() {
+    // TODO:
   }
   renderPoints(points: Point[], color: string) {
     const ctx = this.ctx as CanvasRenderingContext2D;
@@ -180,18 +185,23 @@ game.render();
 
 // 箱子有两种状态。
 // 玩家也会有 4 种朝向。
+let end = false;
 document.body.addEventListener('keydown', function(e) {
-  console.log('移动')
+  if (end) return;
   const eventKey = e.key;
   let dir: string = '';
   if (eventKey === 'ArrowLeft') dir = 'left';
   else if (eventKey === 'ArrowRight') dir = 'right'; 
   else if (eventKey === 'ArrowUp') dir = 'up'; 
   else if (eventKey === 'ArrowDown') dir = 'down';
-
-  if (dir === undefined) return;
+  else return;
+  
   game.move(dir);
   game.render();
-  game.checkSucess();
+  if (game.checkSucess()) {
+    // 结束了。
+    console.log('Game Clear！')
+    end = true;
+  }
 })
 
