@@ -1,6 +1,12 @@
 
 class Point {
   constructor(public x: number, public y: number) {}
+  add(point: Point) {
+    return new Point(
+      point.x + this.x,
+      point.y + this.y
+    )
+  }
 }
 /**
  * 箱子类
@@ -35,25 +41,42 @@ class Game {
     parentEl.appendChild(this.el);
   }
   move(dir: string) {
-
+    // 获取方向向量
     dir = dir.toLowerCase();
-    let { x, y } = this.player
-    if (dir === 'left') x--;
-    else if (dir === 'right') x++;
-    else if (dir === 'up') y--;
-    else if (dir === 'down') y++;
-
-    // 玩家移动。
-    // 1. 判断前进方向格子，（1）是否为箱子
-    let pushedBox: Point;
-    if (this.boxes.find(item => item.x === x && item.y === y)) {
-
+    let dirVector: Point;
+    if (dir === 'left') dirVector = new Point(-1, 0);
+    else if (dir === 'right') dirVector = new Point(1, 0);
+    else if (dir === 'up') dirVector = new Point(0, -1);
+    else if (dir === 'down') dirVector = new Point(0, 1);
+    else {
+      throw new Error('方向字符串不合法')
     }
-    //（2）是否为墙壁。
+    const forwardPlayer = this.player.add(dirVector);
 
+    // 1. 玩家前面是否有墙
+    let forwardIsWall = this.walls.some(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
+    if (forwardIsWall) return;
+
+    // 2. 玩家的前进方向是否有箱子。
+    let boxIndex: number; 
+    boxIndex = this.boxes.findIndex(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
+    if (boxIndex === -1) {
+      this.player = forwardPlayer;
+      return;
+    }
+    // 3. 玩家前面的箱子的前面，是否有箱子或者墙。
+    const forwardBox = this.boxes[boxIndex].add(dirVector);
+    forwardIsWall = this.walls.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
+    console.log('forwardIsWall', forwardIsWall)
+    if (forwardIsWall) return;
+    const forwardIsBox = this.boxes.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
+    if (forwardIsBox) return;
+
+    this.player = forwardPlayer;
+    this.boxes[boxIndex] = forwardBox;
   }
   checkSucess() {
-
+    // TODO: 判断胜利条件，并终止用户输入
   }
   renderPoints(points: Point[], color: string) {
     const ctx = this.ctx as CanvasRenderingContext2D;
@@ -62,6 +85,16 @@ class Game {
     ctx.fillStyle = color;
     points.forEach(pt => {
       ctx.fillRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
+    })
+    ctx.restore();
+  }
+  renderPointsToStroke(points: Point[], color: string) {
+    const ctx = this.ctx as CanvasRenderingContext2D;
+    const grid_w = this.grid_width
+    ctx.save();
+    ctx.fillStyle = color;
+    points.forEach(pt => {
+      ctx.strokeRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
     })
     ctx.restore();
   }
@@ -75,7 +108,7 @@ class Game {
     // 绘制不同元素
     this.renderPoints(this.walls, '#94691d');
     this.renderPoints(this.tiles, 'green');
-    this.renderPoints(this.goals, 'red');
+    this.renderPointsToStroke(this.goals, 'red');
     this.renderPoints(this.boxes, 'blue');
     this.renderPoints([ this.player ], 'black');
   }
@@ -159,5 +192,6 @@ document.body.addEventListener('keydown', function(e) {
   if (dir === undefined) return;
   game.move(dir);
   game.render();
+  game.checkSucess();
 })
 

@@ -1,16 +1,24 @@
 "use strict";
-var Point = /** @class */ (function () {
-    function Point(x, y) {
+class Point {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
     }
-    return Point;
-}());
+    add(point) {
+        return new Point(point.x + this.x, point.y + this.y);
+    }
+}
+/**
+ * 箱子类
+ */
+class Boxes {
+    constructor(boxes) { }
+}
 /**
  * 游戏类
  */
-var Game = /** @class */ (function () {
-    function Game(width, height, grid_width) {
+class Game {
+    constructor(width, height, grid_width) {
         this.width = width;
         this.height = height;
         this.grid_width = grid_width;
@@ -24,58 +32,96 @@ var Game = /** @class */ (function () {
         this.el.width = width * grid_width;
         this.el.height = height * grid_width;
     }
-    Game.prototype.setWalls = function (points) { this.walls = points; };
-    Game.prototype.setTiles = function (points) { this.tiles = points; };
-    Game.prototype.setGoals = function (points) { this.goals = points; };
-    Game.prototype.setBoxes = function (points) { this.boxes = points; };
-    Game.prototype.setPlayer = function (point) { this.player = point; };
-    Game.prototype.mounted = function (selector) {
-        var parentEl = document.querySelector(selector);
+    setWalls(points) { this.walls = points; }
+    setTiles(points) { this.tiles = points; }
+    setGoals(points) { this.goals = points; }
+    setBoxes(points) { this.boxes = points; }
+    setPlayer(point) { this.player = point; }
+    mounted(selector) {
+        const parentEl = document.querySelector(selector);
         if (parentEl === null)
             throw new Error('挂载的元素不存在');
         parentEl.appendChild(this.el);
-    };
-    Game.prototype.move = function (dir) {
-        // 玩家移动。
-        // 1. 判断前进方向格子，（1）是否为箱子（2）是否为墙壁。
+    }
+    move(dir) {
+        // 获取方向向量
         dir = dir.toLowerCase();
+        let dirVector;
         if (dir === 'left')
-            this.player.x--;
+            dirVector = new Point(-1, 0);
         else if (dir === 'right')
-            this.player.x++;
+            dirVector = new Point(1, 0);
         else if (dir === 'up')
-            this.player.y--;
+            dirVector = new Point(0, -1);
         else if (dir === 'down')
-            this.player.y++;
-    };
-    Game.prototype.renderPoints = function (points, color) {
-        var ctx = this.ctx;
-        var grid_w = this.grid_width;
+            dirVector = new Point(0, 1);
+        else {
+            throw new Error('方向字符串不合法');
+        }
+        const forwardPlayer = this.player.add(dirVector);
+        // 1. 玩家前面是否有墙
+        let forwardIsWall = this.walls.some(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
+        if (forwardIsWall)
+            return;
+        // 2. 玩家的前进方向是否有箱子。
+        let boxIndex;
+        boxIndex = this.boxes.findIndex(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
+        if (boxIndex === -1) {
+            this.player = forwardPlayer;
+            return;
+        }
+        // 3. 玩家前面的箱子的前面，是否有箱子或者墙。
+        const forwardBox = this.boxes[boxIndex].add(dirVector);
+        forwardIsWall = this.walls.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
+        console.log('forwardIsWall', forwardIsWall);
+        if (forwardIsWall)
+            return;
+        const forwardIsBox = this.boxes.some(item => item.x === forwardBox.x && item.y === forwardBox.y);
+        if (forwardIsBox)
+            return;
+        this.player = forwardPlayer;
+        this.boxes[boxIndex] = forwardBox;
+    }
+    checkSucess() {
+        // TODO: 判断胜利条件，并终止用户输入
+    }
+    renderPoints(points, color) {
+        const ctx = this.ctx;
+        const grid_w = this.grid_width;
         ctx.save();
         ctx.fillStyle = color;
-        points.forEach(function (pt) {
+        points.forEach(pt => {
             ctx.fillRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
         });
         ctx.restore();
-    };
-    Game.prototype.render = function () {
-        var ctx = this.ctx;
-        var grid_w = this.grid_width;
+    }
+    renderPointsToStroke(points, color) {
+        const ctx = this.ctx;
+        const grid_w = this.grid_width;
+        ctx.save();
+        ctx.fillStyle = color;
+        points.forEach(pt => {
+            ctx.strokeRect(pt.x * grid_w, pt.y * grid_w, grid_w, grid_w);
+        });
+        ctx.restore();
+    }
+    render() {
+        const ctx = this.ctx;
+        const grid_w = this.grid_width;
         if (ctx === null) {
             throw new Error('canvas 上下文获取失败。');
         }
         // 绘制不同元素
         this.renderPoints(this.walls, '#94691d');
         this.renderPoints(this.tiles, 'green');
-        this.renderPoints(this.goals, 'red');
+        this.renderPointsToStroke(this.goals, 'red');
         this.renderPoints(this.boxes, 'blue');
         this.renderPoints([this.player], 'black');
-    };
-    return Game;
-}());
+    }
+}
 // 解析地图字符串，生成多个点集
 function resolveMap(mapStr, width, height) {
-    var map = {
+    const map = {
         '.': 'empty',
         0: 'tile',
         1: 'wall',
@@ -84,18 +130,18 @@ function resolveMap(mapStr, width, height) {
         P: 'player'
     };
     mapStr = mapStr.replace(/\s+/g, '');
-    var walls = [];
-    var tiles = [];
-    var boxes = [];
-    var goals = [];
-    var player = null;
-    for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-            var id = mapStr[y * width + x];
-            var item = map[id];
+    const walls = [];
+    const tiles = [];
+    const boxes = [];
+    const goals = [];
+    let player = null;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const id = mapStr[y * width + x];
+            const item = map[id];
             if (item === 'empty')
                 continue;
-            var point = new Point(x, y);
+            const point = new Point(x, y);
             if (item === 'wall')
                 walls.push(point); // 墙
             else
@@ -109,16 +155,22 @@ function resolveMap(mapStr, width, height) {
         }
     }
     return {
-        walls: walls, tiles: tiles, boxes: boxes, goals: goals, player: player
+        walls, tiles, boxes, goals, player
     };
 }
-var gameMap = "\n.111111111\n100000P001\n1000000001\n1111020301\n...111111.\n";
-var width = 10;
-var height = 5;
-var data = resolveMap(gameMap, width, height);
+const gameMap = `
+.111111111
+100000P001
+1000000001
+1111020301
+...111111.
+`;
+const width = 10;
+const height = 5;
+const data = resolveMap(gameMap, width, height);
 console.log(data);
-var grid_width = 20;
-var game = new Game(width, height, grid_width);
+const grid_width = 20;
+const game = new Game(width, height, grid_width);
 game.setWalls(data.walls);
 game.setTiles(data.tiles);
 game.setGoals(data.goals);
@@ -132,8 +184,8 @@ game.render();
 // 玩家也会有 4 种朝向。
 document.body.addEventListener('keydown', function (e) {
     console.log('移动');
-    var eventKey = e.key;
-    var dir = '';
+    const eventKey = e.key;
+    let dir = '';
     if (eventKey === 'ArrowLeft')
         dir = 'left';
     else if (eventKey === 'ArrowRight')
@@ -146,4 +198,5 @@ document.body.addEventListener('keydown', function (e) {
         return;
     game.move(dir);
     game.render();
+    game.checkSucess();
 });
