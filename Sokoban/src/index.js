@@ -1,8 +1,21 @@
 "use strict";
 class Point {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        if (typeof x === 'number' && typeof y === 'number') {
+            this.x = x;
+            this.y = y;
+        }
+        else if (typeof x === 'string') {
+            [this.x, this.y] = {
+                left: [-1, 0],
+                right: [1, 0],
+                up: [0, -1],
+                down: [0, 1]
+            }[x];
+        }
+        else {
+            throw new Error('传入的参数类型和数量错误');
+        }
     }
     add(point) {
         return new Point(point.x + this.x, point.y + this.y);
@@ -18,6 +31,7 @@ class Game {
         this.grid_width = grid_width;
         this.el = document.createElement('canvas');
         this.ctx = this.el.getContext('2d');
+        this.history = [];
         this.step = 0;
         this.walls = [];
         this.tiles = [];
@@ -41,18 +55,7 @@ class Game {
     move(dir) {
         // 获取方向向量
         dir = dir.toLowerCase();
-        let dirVector;
-        if (dir === 'left')
-            dirVector = new Point(-1, 0);
-        else if (dir === 'right')
-            dirVector = new Point(1, 0);
-        else if (dir === 'up')
-            dirVector = new Point(0, -1);
-        else if (dir === 'down')
-            dirVector = new Point(0, 1);
-        else {
-            throw new Error('方向字符串不合法');
-        }
+        const dirVector = new Point(dir); // TODO: 这。。。（检验太严格貌似也不太好？）
         const forwardPlayer = this.player.add(dirVector);
         // 1. 玩家前面是否有墙
         let forwardIsWall = this.walls.some(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
@@ -77,6 +80,8 @@ class Game {
         this.player = forwardPlayer;
         this.boxes[boxIndex] = forwardBox;
         this.step++;
+    }
+    redo() {
     }
     getStep() {
         return this.step;

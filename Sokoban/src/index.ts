@@ -1,6 +1,24 @@
 
 class Point {
-  constructor(public x: number, public y: number) {}
+  public x: number;
+  public y: number;
+  constructor(x: number, y: number);
+  constructor(dir: 'left' | 'right' | 'up' | 'down');
+  constructor(x: number | 'left' | 'right' | 'up' | 'down', y?: number) {
+    if (typeof x === 'number' && typeof y === 'number') {
+      this.x = x;
+      this.y = y;
+    } else if (typeof x === 'string') {
+      [this.x, this.y] = {
+        left: [-1, 0],
+        right: [1, 0],
+        up: [0, -1],
+        down: [0, 1]
+      }[x]
+    } else {
+      throw new Error('传入的参数类型和数量错误')
+    }
+  }
   add(point: Point) {
     return new Point(
       point.x + this.x,
@@ -13,7 +31,8 @@ class Point {
  */
 class Game {
   private el = document.createElement('canvas');
-  private ctx = this.el.getContext('2d') 
+  private ctx = this.el.getContext('2d');
+  private history: string[] = [];
   private step = 0;
   private walls: Point[] = [];
   private tiles: Point[] = [];
@@ -38,14 +57,8 @@ class Game {
   move(dir: string) {
     // 获取方向向量
     dir = dir.toLowerCase();
-    let dirVector: Point;
-    if (dir === 'left') dirVector = new Point(-1, 0);
-    else if (dir === 'right') dirVector = new Point(1, 0);
-    else if (dir === 'up') dirVector = new Point(0, -1);
-    else if (dir === 'down') dirVector = new Point(0, 1);
-    else {
-      throw new Error('方向字符串不合法')
-    }
+    const dirVector: Point = new Point(dir as 'left' | 'right' | 'up' | 'down'); // TODO: （。。检验太严格貌似也不太好？）
+
     const forwardPlayer = this.player.add(dirVector);
     // 1. 玩家前面是否有墙
     let forwardIsWall = this.walls.some(item => item.x === forwardPlayer.x && item.y === forwardPlayer.y);
@@ -68,6 +81,9 @@ class Game {
     this.player = forwardPlayer;
     this.boxes[boxIndex] = forwardBox;
     this.step++;
+  }
+  redo() {
+
   }
   getStep() {
     return this.step;
