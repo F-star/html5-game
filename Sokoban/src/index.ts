@@ -25,6 +25,14 @@ class Point {
       point.y + this.y
     )
   }
+  reverse() {
+    this.x = -this.x;
+    this.y = -this.y;
+    return this;
+  }
+  clone() {
+    return new Point(this.x, this.y)
+  }
 }
 /**
  * 游戏类
@@ -32,7 +40,7 @@ class Point {
 class Game {
   private el = document.createElement('canvas');
   private ctx = this.el.getContext('2d');
-  private history: string[] = [];
+  private history: Point[] = [];
   private step = 0;
   private walls: Point[] = [];
   private tiles: Point[] = [];
@@ -57,7 +65,7 @@ class Game {
   move(dir: string) {
     // 获取方向向量
     dir = dir.toLowerCase();
-    const dirVector: Point = new Point(dir as 'left' | 'right' | 'up' | 'down'); // TODO: （。。检验太严格貌似也不太好？）
+    const dirVector: Point = new Point(dir as 'left' | 'right' | 'up' | 'down'); // TODO:  看看是否有优化空间（。。检验太严格貌似也不太好？）
 
     const forwardPlayer = this.player.add(dirVector);
     // 1. 玩家前面是否有墙
@@ -69,6 +77,7 @@ class Game {
     if (boxIndex === -1) {
       this.player = forwardPlayer;
       this.step++;
+      this.history.push(dirVector)
       return;
     }
     // 3. 玩家前面的箱子的前面，是否有箱子或者墙。
@@ -80,13 +89,26 @@ class Game {
 
     this.player = forwardPlayer;
     this.boxes[boxIndex] = forwardBox;
+    this.history.push(dirVector)
     this.step++;
   }
   redo() {
-
+    if (this.history.length === 0) return false
+    this.step--;
+    const dir = this.history.pop() as Point;
+    // 是否需要复原箱子，如果要，找出并复原
+    const movedBox = this.player.add(dir);
+    const movedBoxIndex = this.boxes.findIndex(item => item.x === movedBox.x && item.y === movedBox.y)
+    if (movedBoxIndex !== -1) {
+      this.boxes[movedBoxIndex] = this.player.clone()
+    }
+    // 玩家复位
+    this.player = this.player.add(dir.reverse())
+    return true
   }
   getStep() {
-    return this.step;
+    // return this.step;
+    return this.history.length;
   }
   checkSucess() {
     const isSucess = this.goals.every(goal => {
@@ -221,3 +243,13 @@ document.body.addEventListener('keydown', function(e) {
     end = true;
   }
 })
+
+const redoBtn = document.getElementById('redo-btn') as HTMLElement;
+redoBtn.onclick = function() {
+  const canRedo = game.redo();
+  if (!canRedo) {
+    console.log('到底了，无法继续回退')
+    return
+  }
+  game.render();
+}
