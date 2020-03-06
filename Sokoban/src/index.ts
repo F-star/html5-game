@@ -252,4 +252,5 @@ redoBtn.onclick = function() {
     return
   }
   game.render();
+  stepCountElement.innerText = '' + game.getStep();
 }
