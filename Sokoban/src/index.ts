@@ -246,6 +246,7 @@ document.body.addEventListener('keydown', function(e) {
 
 const redoBtn = document.getElementById('redo-btn') as HTMLElement;
 redoBtn.onclick = function() {
+  if (end) return;
   const canRedo = game.redo();
   if (!canRedo) {
     console.log('到底了，无法继续回退')
